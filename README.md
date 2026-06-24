@@ -14,26 +14,26 @@ El servidor opera como un microservicio desacoplado y sin estado (stateless). Su
 
 ```mermaid
 graph TD
-    Client[Cliente / Dispositivo IoT o Backend Core] -->|1. HTTP POST /read-qr/| API[src/route/qr_routes.py]
-    API -->|2. Inicia conexión en Lifespan| MQTT[src/client/mqtt_client.py]
-    API -->|3. Decodifica bytes a imagen| CV[OpenCV / NumPy]
-    CV -->|4. Invoca detección de QRs| Service[src/service/qr_service.py]
+    Client["Cliente / Dispositivo IoT o Backend Core"] -->|1. HTTP POST /read-qr/| API["src/route/qr_routes.py"]
+    API -->|2. Inicia conexión en Lifespan| MQTT["src/client/mqtt_client.py"]
+    API -->|3. Decodifica bytes a imagen| CV["OpenCV / NumPy"]
+    CV -->|4. Invoca detección de QRs| Service["src/service/qr_service.py"]
 
-    subgraph Motor de Detección QR (Multi-pasada)
-        Service --> Pass1[Pasada 1: OpenCV detectAndDecodeMulti]
-        Pass1 -->|Si no detecta 3 QRs| Pass2[Pasada 2: PyZbar Global + Rotaciones]
-        Pass2 -->|Si no detecta 3 QRs| Pass3[Pasada 3: Preprocesamiento de Imagen + PyZbar]
-        Pass3 -->|Si no detecta 3 QRs| Pass4[Pasada 4: Detección de Contornos + Warp Perspective]
+    subgraph "Motor de Detección QR (Multi-pasada)"
+        Service --> Pass1["Pasada 1: OpenCV detectAndDecodeMulti"]
+        Pass1 -->|Si no detecta 3 QRs| Pass2["Pasada 2: PyZbar Global + Rotaciones"]
+        Pass2 -->|Si no detecta 3 QRs| Pass3["Pasada 3: Preprocesamiento de Imagen + PyZbar"]
+        Pass3 -->|Si no detecta 3 QRs| Pass4["Pasada 4: Detección de Contornos + Warp Perspective"]
     end
 
     Service -->|5. Retorna textos de QRs encontrados| API
     
-    API -.->|6. Publicación asíncrona - Background Task| MQTT_Pub[Publicar a MQTT con QoS 1]
-    MQTT_Pub -->|MQTT TLS| Broker[Broker MQTT - e.g., EMQX / Mosquitto]
-    Broker -->|Suscripción| Core[Servicio Backend Core / Almacenamiento]
+    API -.->|6. Publicación asíncrona - Background Task| MQTT_Pub["Publicar a MQTT con QoS 1"]
+    MQTT_Pub -->|MQTT TLS| Broker["Broker MQTT - e.g., EMQX / Mosquitto"]
+    Broker -->|Suscripción| Core["Servicio Backend Core / Almacenamiento"]
     
-    API -.->|7. Si DEVELOP_MODE == 'DEBUG'| Cloudinary[src/utils/utils.py - Subir frame]
-    Cloudinary -.->|Retorna URL segura| Logger[Registro en Logs]
+    API -.->|7. Si DEVELOP_MODE == 'DEBUG'| Cloudinary["src/utils/utils.py - Subir frame"]
+    Cloudinary -.->|Retorna URL segura| Logger["Registro en Logs"]
     
     API -->|8. Respuesta HTTP Síncrona| Client
 ```
